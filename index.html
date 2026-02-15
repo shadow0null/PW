@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PW GRAND LEAKAGE - SHADOW0NULL</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: monospace;
+    background: #0a0a0a;
+    color: #eee;
+}
+
+/* WATERMARK */
+.watermark {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.watermark::after {
+    content: "PW GRAND LEAKAGE • SHADOW0NULL •";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 70px;
+    font-weight: 900;
+    color: rgba(255,0,0,0.15);
+    white-space: nowrap;
+}
+
+/* HEADER */
+header {
+    padding: 20px 40px;
+    background: #111;
+    border-bottom: 2px solid red;
+    display: flex;
+    justify-content: space-between;
+}
+header h1 {
+    color: red;
+    margin: 0;
+}
+.owner {
+    color: #ff5555;
+}
+
+/* WARNING */
+.warning {
+    margin: 20px;
+    padding: 15px;
+    border: 1px solid red;
+    background: #140000;
+    color: #ff6666;
+    text-align: center;
+    animation: blink 1.5s infinite;
+}
+@keyframes blink {
+    50% { opacity: 0.6; }
+}
+
+/* FORM */
+.form-container {
+    text-align: center;
+    margin: 30px 0;
+}
+.form-container input,
+.form-container textarea {
+    display: block;
+    width: 320px;
+    margin: 10px auto;
+    padding: 10px;
+    background: black;
+    color: red;
+    border: 1px solid red;
+    font-family: monospace;
+    outline: none;
+}
+.form-container textarea {
+    height: 80px;
+    resize: none;
+}
+.form-container button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: red;
+    color: black;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+.form-container button:hover {
+    background: darkred;
+}
+
+/* RESULT CARD */
+.cards {
+    padding: 20px 40px 40px;
+}
+.card {
+    background: #111;
+    border-left: 5px solid red;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.card h3 {
+    color: red;
+    margin-top: 0;
+}
+.card img {
+    max-width: 100%;
+    border: 1px solid #400;
+    margin-top: 10px;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="watermark"></div>
+
+<header>
+    <h1>PW GRAND LEAKAGE</h1>
+    <div class="owner">OWNER: SHADOW0NULL</div>
+</header>
+
+<div class="warning">
+⚠ UNAUTHORIZED ACCESS PROHIBITED ⚠<br>
+All requests are logged and monitored.
+</div>
+
+<div class="form-container">
+    <input type="text" id="teacher" placeholder="Teacher Name (Required)">
+    <input type="text" id="batch" placeholder="Batch Name (Required)">
+    <input type="email" id="email" placeholder="Requester Email ID (Required)">
+    <textarea id="note" placeholder="Write request note (optional message)"></textarea>
+    <input type="file" id="image" accept="image/*">
+    <button onclick="submitRequest()">SUBMIT REQUEST</button>
+</div>
+
+<div class="cards" id="result"></div>
+
+<footer>
+    NEW YEAR GIFT From shadow0null
+</footer>
+
+<script>
+const result = document.getElementById("result");
+
+function submitRequest() {
+    const teacher = document.getElementById("teacher").value.trim();
+    const batch = document.getElementById("batch").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const note = document.getElementById("note").value.trim();
+    const imageInput = document.getElementById("image");
+
+    if (!teacher || !batch || !email || !imageInput.files.length) {
+        alert("❌ ALL fields including IMAGE are compulsory.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        result.innerHTML = `
+            <div class="card">
+                <h3>REQUEST SUBMITTED</h3>
+                <p><strong>Teacher:</strong> ${teacher}</p>
+                <p><strong>Batch:</strong> ${batch}</p>
+                <p><strong>Requester Email:</strong> ${email}</p>
+                <p><strong>Note:</strong> ${note || "No additional message"}</p>
+                <img src="${e.target.result}">
+                <p style="color:#ff6666;">
+                    Information (if approved) will be sent to the provided email ID.
+                </p>
+            </div>
+        `;
+    };
+    reader.readAsDataURL(imageInput.files[0]);
+
+    // Reset
+    document.getElementById("teacher").value = "";
+    document.getElementById("batch").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("note").value = "";
+    imageInput.value = "";
+}
+</script>
+
+</body>
+</html>

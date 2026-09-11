@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PW GRAND LEAKAGE - SHADOW0NULL</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: monospace;
+    background: #0a0a0a;
+    color: #eee;
+}
+
+/* WATERMARK */
+.watermark {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.watermark::after {
+    content: "PW GRAND LEAKAGE • SHADOW0NULL •";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 70px;
+    font-weight: 900;
+    color: rgba(255,0,0,0.15);
+    white-space: nowrap;
+}
+
+/* HEADER */
+header {
+    padding: 20px 40px;
+    background: #111;
+    border-bottom: 2px solid red;
+    display: flex;
+    justify-content: space-between;
+}
+header h1 {
+    color: red;
+    margin: 0;
+}
+.owner {
+    color: #ff5555;
+}
+
+/* WARNING */
+.warning {
+    margin: 20px;
+    padding: 15px;
+    border: 1px solid red;
+    background: #140000;
+    color: #ff6666;
+    text-align: center;
+    animation: blink 1.5s infinite;
+}
+@keyframes blink {
+    50% { opacity: 0.6; }
+}
+
+/* FORM */
+.form-container {
+    text-align: center;
+    margin: 40px auto;
+    max-width: 400px;
+    padding: 20px;
+    background: #0d0d0d;
+    border: 1px solid #330000;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+}
+.form-container input,
+.form-container textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 15px 0;
+    padding: 12px;
+    background: black;
+    color: #ff5555;
+    border: 1px solid #aa0000;
+    font-family: monospace;
+    outline: none;
+    transition: all 0.3s ease;
+}
+.form-container input:focus,
+.form-container textarea:focus {
+    border-color: red;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+    background: #111;
+}
+.form-container textarea {
+    height: 100px;
+    resize: none;
+}
+.form-container button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #cc0000;
+    color: white;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    font-family: monospace;
+    font-size: 16px;
+}
+.form-container button:hover:not(:disabled) {
+    background: #ff0000;
+    box-shadow: 0 0 10px red;
+}
+.form-container button:disabled {
+    background: #550000;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* TOAST */
+.toast {
+    background: #1a0000;
+    border: 1px solid red;
+    color: white;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    font-family: monospace;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    animation: fadein 0.5s forwards, fadeout 0.5s 4.5s forwards;
+}
+@keyframes fadein {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeout {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+}
+.toast.success { border-color: #00ff00; color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
+
+/* RESULT CARD */
+.cards {
+    padding: 20px 40px 40px;
+}
+.card {
+    background: #111;
+    border-left: 5px solid red;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.card h3 {
+    color: red;
+    margin-top: 0;
+}
+.card img {
+    max-width: 100%;
+    border: 1px solid #400;
+    margin-top: 10px;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="watermark"></div>
+
+<header>
+    <h1>PW GRAND LEAKAGE</h1>
+    <div class="owner">OWNER: SHADOW0NULL</div>
+</header>
+
+<div class="warning">
+⚠ UNAUTHORIZED ACCESS PROHIBITED ⚠<br>
+All requests are logged and monitored.
+</div>
+
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
+<div class="form-container">
+    <input type="text" id="teacher" placeholder="Teacher Name (Required)">
+    <input type="text" id="batch" placeholder="Batch Name (Required)">
+    <input type="text" id="state" placeholder="State or City (Required)">
+    <input type="tel" id="phone" placeholder="Phone Number (Optional)">
+    <input type="email" id="email" placeholder="Requester Email ID (Required)">
+    <textarea id="note" placeholder="Write request note (optional message)"></textarea>
+    <input type="file" id="image" accept="image/*">
+    <button id="submitBtn" onclick="submitRequest()">SUBMIT REQUEST</button>
+</div>
+
+<div class="cards" id="result"></div>
+
+<footer>
+    NEW YEAR GIFT From shadow0null
+</footer>
+
+<script>
+const result = document.getElementById("result");
+
+function showToast(message, type = 'error') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    // Remove toast after animation (5s)
+    setTimeout(() => {
+        if (container.contains(toast)) {
+            container.removeChild(toast);
+        }
+    }, 5000);
+}
+
+async function submitRequest() {
+    const teacher = document.getElementById("teacher").value.trim();
+    const batch = document.getElementById("batch").value.trim();
+    const state = document.getElementById("state").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const note = document.getElementById("note").value.trim();
+    const imageInput = document.getElementById("image");
+    const submitBtn = document.getElementById("submitBtn");
+
+    if (!teacher || !batch || !state || !email || !imageInput.files.length) {
+        showToast("❌ Missing required fields (including Image).");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('teacher', teacher);
+    formData.append('batch', batch);
+    formData.append('state', state);
+    formData.append('phone', phone);
+    formData.append('email', email);
+    formData.append('note', note);
+    formData.append('image', imageInput.files[0]);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "SUBMITTING...";
+
+    try {
+        const response = await fetch('/api/submit', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast("✔ Request submitted successfully!", "success");
+
+            result.innerHTML = `
+                <div class="card">
+                    <h3>REQUEST SUBMITTED</h3>
+                    <p><strong>Teacher:</strong> ${teacher}</p>
+                    <p><strong>Batch:</strong> ${batch}</p>
+                    <p><strong>State/City:</strong> ${state}</p>
+                    <p><strong>Phone:</strong> ${phone || "N/A"}</p>
+                    <p><strong>Requester Email:</strong> ${email}</p>
+                    <p><strong>Note:</strong> ${note || "No additional message"}</p>
+                    <img src="${data.data.imageUrl}" alt="Uploaded Image">
+                    <p style="color:#ff6666;">
+                        Information (if approved) will be sent to the provided email ID.
+                    </p>
+                </div>
+            `;
+
+            // Reset
+            document.getElementById("teacher").value = "";
+            document.getElementById("batch").value = "";
+            document.getElementById("state").value = "";
+            document.getElementById("phone").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("note").value = "";
+            imageInput.value = "";
+        } else {
+            showToast("❌ Server Error: " + data.message);
+        }
+    } catch (error) {
+        console.error("Error submitting request:", error);
+        showToast("❌ Error submitting request. Please try again.");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "SUBMIT REQUEST";
+    }
+}
+</script>
+
+</body>
+</html>

@@ -64,36 +64,82 @@ header h1 {
 /* FORM */
 .form-container {
     text-align: center;
-    margin: 30px 0;
+    margin: 40px auto;
+    max-width: 400px;
+    padding: 20px;
+    background: #0d0d0d;
+    border: 1px solid #330000;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
 }
 .form-container input,
 .form-container textarea {
     display: block;
-    width: 320px;
-    margin: 10px auto;
-    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 15px 0;
+    padding: 12px;
     background: black;
-    color: red;
-    border: 1px solid red;
+    color: #ff5555;
+    border: 1px solid #aa0000;
     font-family: monospace;
     outline: none;
+    transition: all 0.3s ease;
+}
+.form-container input:focus,
+.form-container textarea:focus {
+    border-color: red;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+    background: #111;
 }
 .form-container textarea {
-    height: 80px;
+    height: 100px;
     resize: none;
 }
 .form-container button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: red;
-    color: black;
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #cc0000;
+    color: white;
     font-weight: bold;
     border: none;
     cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    font-family: monospace;
+    font-size: 16px;
 }
-.form-container button:hover {
-    background: darkred;
+.form-container button:hover:not(:disabled) {
+    background: #ff0000;
+    box-shadow: 0 0 10px red;
 }
+.form-container button:disabled {
+    background: #550000;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* TOAST */
+.toast {
+    background: #1a0000;
+    border: 1px solid red;
+    color: white;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    font-family: monospace;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    animation: fadein 0.5s forwards, fadeout 0.5s 4.5s forwards;
+}
+@keyframes fadein {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeout {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+}
+.toast.success { border-color: #00ff00; color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
 
 /* RESULT CARD */
 .cards {
@@ -139,14 +185,17 @@ footer {
 All requests are logged and monitored.
 </div>
 
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
 <div class="form-container">
     <input type="text" id="teacher" placeholder="Teacher Name (Required)">
     <input type="text" id="batch" placeholder="Batch Name (Required)">
     <input type="text" id="state" placeholder="State or City (Required)">
+    <input type="tel" id="phone" placeholder="Phone Number (Optional)">
     <input type="email" id="email" placeholder="Requester Email ID (Required)">
     <textarea id="note" placeholder="Write request note (optional message)"></textarea>
     <input type="file" id="image" accept="image/*">
-    <button onclick="submitRequest()">SUBMIT REQUEST</button>
+    <button id="submitBtn" onclick="submitRequest()">SUBMIT REQUEST</button>
 </div>
 
 <div class="cards" id="result"></div>
@@ -158,16 +207,33 @@ All requests are logged and monitored.
 <script>
 const result = document.getElementById("result");
 
+function showToast(message, type = 'error') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    // Remove toast after animation (5s)
+    setTimeout(() => {
+        if (container.contains(toast)) {
+            container.removeChild(toast);
+        }
+    }, 5000);
+}
+
 async function submitRequest() {
     const teacher = document.getElementById("teacher").value.trim();
     const batch = document.getElementById("batch").value.trim();
     const state = document.getElementById("state").value.trim();
+    const phone = document.getElementById("phone").value.trim();
     const email = document.getElementById("email").value.trim();
     const note = document.getElementById("note").value.trim();
     const imageInput = document.getElementById("image");
+    const submitBtn = document.getElementById("submitBtn");
 
     if (!teacher || !batch || !state || !email || !imageInput.files.length) {
-        alert("❌ ALL fields including State/City and IMAGE are compulsory.");
+        showToast("❌ Missing required fields (including Image).");
         return;
     }
 
@@ -175,9 +241,13 @@ async function submitRequest() {
     formData.append('teacher', teacher);
     formData.append('batch', batch);
     formData.append('state', state);
+    formData.append('phone', phone);
     formData.append('email', email);
     formData.append('note', note);
     formData.append('image', imageInput.files[0]);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "SUBMITTING...";
 
     try {
         const response = await fetch('/api/submit', {
@@ -188,12 +258,15 @@ async function submitRequest() {
         const data = await response.json();
 
         if (data.success) {
+            showToast("✔ Request submitted successfully!", "success");
+
             result.innerHTML = `
                 <div class="card">
                     <h3>REQUEST SUBMITTED</h3>
                     <p><strong>Teacher:</strong> ${teacher}</p>
                     <p><strong>Batch:</strong> ${batch}</p>
                     <p><strong>State/City:</strong> ${state}</p>
+                    <p><strong>Phone:</strong> ${phone || "N/A"}</p>
                     <p><strong>Requester Email:</strong> ${email}</p>
                     <p><strong>Note:</strong> ${note || "No additional message"}</p>
                     <img src="${data.data.imageUrl}" alt="Uploaded Image">
@@ -207,15 +280,19 @@ async function submitRequest() {
             document.getElementById("teacher").value = "";
             document.getElementById("batch").value = "";
             document.getElementById("state").value = "";
+            document.getElementById("phone").value = "";
             document.getElementById("email").value = "";
             document.getElementById("note").value = "";
             imageInput.value = "";
         } else {
-            alert("❌ Server Error: " + data.message);
+            showToast("❌ Server Error: " + data.message);
         }
     } catch (error) {
         console.error("Error submitting request:", error);
-        alert("❌ Error submitting request. Please try again.");
+        showToast("❌ Error submitting request. Please try again.");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "SUBMIT REQUEST";
     }
 }
 </script>

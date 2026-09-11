@@ -3,9 +3,30 @@ const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize SQLite database
+const db = new sqlite3.Database(path.join(__dirname, 'submissions.db'), (err) => {
+    if (err) {
+        console.error("Error opening database " + err.message);
+    } else {
+        db.run(`CREATE TABLE IF NOT EXISTS submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            teacher TEXT,
+            batch TEXT,
+            state TEXT,
+            phone TEXT,
+            email TEXT,
+            note TEXT,
+            imageFilename TEXT,
+            imageUrl TEXT
+        )`);
+    }
+});
 
 // Middleware
 app.use(cors());
@@ -45,38 +66,36 @@ const upload = multer({
 // API Endpoint to handle form submission
 app.post('/api/submit', upload.single('image'), (req, res) => {
     try {
-        const { teacher, batch, state, email, note } = req.body;
+        const { teacher, batch, state, phone, email, note } = req.body;
 
         if (!teacher || !batch || !state || !email || !req.file) {
             return res.status(400).json({ success: false, message: "Missing required fields" });
         }
 
-        const submission = {
-            timestamp: new Date().toISOString(),
-            teacher,
-            batch,
-            state,
-            email,
-            note: note || "",
-            imagePath: req.file.path,
-            imageFilename: req.file.filename,
-            imageUrl: `/uploads/${req.file.filename}`
-        };
+        const timestamp = new Date().toISOString();
+        const imageFilename = req.file.filename;
+        const imageUrl = `/uploads/${imageFilename}`;
+        const phoneVal = phone || "";
+        const noteVal = note || "";
 
-        const submissionsFile = path.join(__dirname, 'submissions.json');
+        const sql = `INSERT INTO submissions (timestamp, teacher, batch, state, phone, email, note, imageFilename, imageUrl)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const params = [timestamp, teacher, batch, state, phoneVal, email, noteVal, imageFilename, imageUrl];
 
-        let submissions = [];
-        if (fs.existsSync(submissionsFile)) {
-            const data = fs.readFileSync(submissionsFile, 'utf8');
-            try {
-                submissions = JSON.parse(data);
-            } catch(e) {}
-        }
+        db.run(sql, params, function(err) {
+            if (err) {
+                console.error("Database insert error: ", err);
+                return res.status(500).json({ success: false, message: "Internal server error saving to database" });
+            }
 
-        submissions.push(submission);
-        fs.writeFileSync(submissionsFile, JSON.stringify(submissions, null, 2));
+            const submission = {
+                id: this.lastID,
+                timestamp, teacher, batch, state, phone: phoneVal, email, note: noteVal, imageFilename, imageUrl
+            };
 
-        res.json({ success: true, message: "Request submitted successfully", data: submission });
+            res.json({ success: true, message: "Request submitted successfully", data: submission });
+        });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Internal server error" });

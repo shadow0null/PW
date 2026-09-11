@@ -142,6 +142,7 @@ All requests are logged and monitored.
 <div class="form-container">
     <input type="text" id="teacher" placeholder="Teacher Name (Required)">
     <input type="text" id="batch" placeholder="Batch Name (Required)">
+    <input type="text" id="state" placeholder="State or City (Required)">
     <input type="email" id="email" placeholder="Requester Email ID (Required)">
     <textarea id="note" placeholder="Write request note (optional message)"></textarea>
     <input type="file" id="image" accept="image/*">
@@ -157,42 +158,65 @@ All requests are logged and monitored.
 <script>
 const result = document.getElementById("result");
 
-function submitRequest() {
+async function submitRequest() {
     const teacher = document.getElementById("teacher").value.trim();
     const batch = document.getElementById("batch").value.trim();
+    const state = document.getElementById("state").value.trim();
     const email = document.getElementById("email").value.trim();
     const note = document.getElementById("note").value.trim();
     const imageInput = document.getElementById("image");
 
-    if (!teacher || !batch || !email || !imageInput.files.length) {
-        alert("❌ ALL fields including IMAGE are compulsory.");
+    if (!teacher || !batch || !state || !email || !imageInput.files.length) {
+        alert("❌ ALL fields including State/City and IMAGE are compulsory.");
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        result.innerHTML = `
-            <div class="card">
-                <h3>REQUEST SUBMITTED</h3>
-                <p><strong>Teacher:</strong> ${teacher}</p>
-                <p><strong>Batch:</strong> ${batch}</p>
-                <p><strong>Requester Email:</strong> ${email}</p>
-                <p><strong>Note:</strong> ${note || "No additional message"}</p>
-                <img src="${e.target.result}">
-                <p style="color:#ff6666;">
-                    Information (if approved) will be sent to the provided email ID.
-                </p>
-            </div>
-        `;
-    };
-    reader.readAsDataURL(imageInput.files[0]);
+    const formData = new FormData();
+    formData.append('teacher', teacher);
+    formData.append('batch', batch);
+    formData.append('state', state);
+    formData.append('email', email);
+    formData.append('note', note);
+    formData.append('image', imageInput.files[0]);
 
-    // Reset
-    document.getElementById("teacher").value = "";
-    document.getElementById("batch").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("note").value = "";
-    imageInput.value = "";
+    try {
+        const response = await fetch('/api/submit', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            result.innerHTML = `
+                <div class="card">
+                    <h3>REQUEST SUBMITTED</h3>
+                    <p><strong>Teacher:</strong> ${teacher}</p>
+                    <p><strong>Batch:</strong> ${batch}</p>
+                    <p><strong>State/City:</strong> ${state}</p>
+                    <p><strong>Requester Email:</strong> ${email}</p>
+                    <p><strong>Note:</strong> ${note || "No additional message"}</p>
+                    <img src="${data.data.imageUrl}" alt="Uploaded Image">
+                    <p style="color:#ff6666;">
+                        Information (if approved) will be sent to the provided email ID.
+                    </p>
+                </div>
+            `;
+
+            // Reset
+            document.getElementById("teacher").value = "";
+            document.getElementById("batch").value = "";
+            document.getElementById("state").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("note").value = "";
+            imageInput.value = "";
+        } else {
+            alert("❌ Server Error: " + data.message);
+        }
+    } catch (error) {
+        console.error("Error submitting request:", error);
+        alert("❌ Error submitting request. Please try again.");
+    }
 }
 </script>
 
